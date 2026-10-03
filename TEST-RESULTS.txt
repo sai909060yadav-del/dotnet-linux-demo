@@ -1,0 +1,5 @@
+Build and publish: PASS (.NET SDK 10.0.203, Windows).
+Published app: PASS home page, health endpoint, message/version and .NET 10 runtime.
+Linux execution: NOT TESTED here; WSL denied access. Run scripts/run-linux.sh and scripts/smoke-test.py in Kali.
+GitHub workflow: provided, not executed on GitHub.
+SQL Server: not connected in this first deployment demo.

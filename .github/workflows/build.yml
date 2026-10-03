@@ -1,0 +1,38 @@
+name: Build and test demo on Linux
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Publish
+        run: dotnet publish DemoWeb.csproj -c Release -o artifacts/publish -p:UseAppHost=false
+      - name: Test published application
+        shell: bash
+        run: |
+          cd artifacts/publish
+          dotnet DemoWeb.dll --urls http://127.0.0.1:5080 > /tmp/demo-web.log 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" || true' EXIT
+          ready=0
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:5080/health >/dev/null; then ready=1; break; fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then cat /tmp/demo-web.log; exit 1; fi
+          cd ../..
+          python3 scripts/smoke-test.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DemoWeb-published
+          path: artifacts/publish/
